@@ -1,0 +1,4 @@
+python
+pytesseract
+pillow
+openia
