@@ -1,4 +1,5 @@
-from project import Invoice, is_invoice_image
+from InvoiceScanner.project import Invoice, is_invoice_image
+
 
 def test_invoice_validation():
     # Test if the class correctly fixes a price like "$10.50" to 10.5
@@ -12,4 +13,4 @@ def test_local_ocr_logic():
 
 def test_csv_formatting():
     # Test if your saving function creates the right header
-    pass
+    pass    pass
