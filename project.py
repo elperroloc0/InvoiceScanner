@@ -1,65 +1,49 @@
 import argparse
 import logging
 import os
-import re
-import sys
 
-STORAGE_FOLDER = "scanned"
+import cv2
+import numpy as np
 
-ALLOWED_FILE_EXTENTIONS = {
-    "..."
-}
+STORAGE_FOLDER = "samples"
 
-SAVE_EXTENTIONS = {
-    ".jsonl",
-    ".csv",
-}
+SAVE_EXTENSIONS = {".jsonl", ".json", ".csv"}
+ALLOWED_IMAGE_EXTENSIONS = {".npg", ".jpg", ".jpeg"}
+
 
 def get_args():
-    """Defines command line arguments."""
-    parser = argparse.ArgumentParser(description="Extract data from receipt images.")
-    # first argument
+    """Parse and validate command lines arguments."""
+    parser = argparse. ArgumentParser(description="Extract data from receipt images.")
     parser.add_argument("image", help="Path to the receipt image file")
-    # optional for csv
-    parser.add_argument("-o", "--output", type=str, default="invoices.jsonl", help="Output file path (default: invoices.jsonl) ")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed progress logs")
+    parser.add_argument("-o", "--output", type=str, default="invoices.jsonl", help="Output file path(default: invouces.jsonl)",)
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed logs")
 
     args = parser.parse_args()
 
-    if args.verbose:
-        print(f"[LOG] Proccessing image: {args.image}")
+    """ --- Validate  --- """
+    # input image
+    image_path = os.path.abspath(args.image)
+    if not os.path.isfile(args.image):
+        parser.error(f"Image file not found: {args.image}")
 
-    # normalizr extension
-    ext = os.path.splitext(args.output)[1].lower()
+    # input extension
+    img_ext = os.path.splitext(args.image)[1].lower()
+    if img_ext not in ALLOWED_IMAGE_EXTENSIONS:
+        parser.error(f"Image extension not supported. Use: {', '.join(sorted(ALLOWED_IMAGE_EXTENSIONS))}")
 
-    # check for accepted extentions
-    if not ext in SAVE_EXTENTIONS:
-        print(f"extension not supported, use: {', '.join(SAVE_EXTENTIONS)}")
-        sys.exit(1)
+    # output extension
+    out_ext = os.path.splitext(args.output)[1].lower()
+    if out_ext not in SAVE_EXTENSIONS:
+        parser.error(f"Unsupported output format. Use: {', '.join(sorted(SAVE_EXTENSIONS))}")
 
-    # Prepend the directory if needed
-    final_path = os.path.join(STORAGE_FOLDER, args.output)
-    print(f"Your scan will be stored in: {final_path}")
+    # output default check if exist
+    os.makedirs(STORAGE_FOLDER, exist_ok=True)
 
-    # return validated args
+    args.image = image_path
+    args.output = os.path.abspath(args.output)
+
     return args
 
-def main():
-    args = get_args()
-
-    # log setting
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="%(levelname)s: %(message)s"
-    )
-
-    # validate image
-
-    # if image is correct
-        # send to parser
 
 
 
-if __name__ == "__main__":
-    main()

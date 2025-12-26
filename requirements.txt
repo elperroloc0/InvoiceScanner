@@ -1,4 +1,5 @@
 python
-pytesseract
+easyocr
 pillow
-openia
+numpy
+
