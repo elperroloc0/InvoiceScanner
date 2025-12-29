@@ -1,5 +1,6 @@
-python
-easyocr
-pillow
-numpy
-
+numpy==2.2.6
+opencv-python==4.12.0.88
+easyocr==1.7.2
+regex==2025.11.3
+matplotlib==3.10.8
+python == 3.12
