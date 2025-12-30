@@ -1,6 +1,6 @@
 # Invoice Scanner (CS50P Final Project)
 
-#### 🎥 Video Demo: <URL HERE>
+#### 🎥 Video Demo: <https://youtu.be/0eT58dPMWco?si=iS-4i_v0xV2LTqpD>
 
 ## Description
 
