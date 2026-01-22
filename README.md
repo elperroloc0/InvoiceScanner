@@ -4,7 +4,7 @@
 
 ## Description
 
-**Invoice Scanner** is a project I developed to solve a personal frustration: manually tracking grocery expenses. As a frequent shopper at Publix, I realized that my receipts were full of valuable data that was being lost in paper piles. I decided to build a Python tool that uses Computer Vision and Optical Character Recognition (OCR) to convert these raw images into structured formats like JSON or CSV. This tool isn't just about reading text; it's about making sense of the noise and extracting meaningful financial insights for my personal budget.
+**Invoice Scanner** I decided to build a Python tool that uses Computer Vision and Optical Character Recognition (OCR) to convert these raw images into structured formats like JSON or CSV. This tool isn't just about reading text; it's about making sense of the noise and extracting meaningful financial insights for my personal budget.
 
 The program identifies:
 - **Store Name**: Primarily focused on Publix, the retailer I visit most often.
