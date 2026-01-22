@@ -4,6 +4,7 @@ import os
 
 from scanner.config import ALLOWED_IMAGE_EXTENSIONS, SAVE_EXTENSIONS, STORAGE_FOLDER
 from scanner.ocr import preprocess_receipt, run_ocr
+from scanner.openai_service import extract_data_with_openai
 from scanner.parser import parse_receipt
 from scanner.storage import dict_to_table, save_to_file
 
@@ -76,6 +77,40 @@ def main():
         logging.error("No text detected.")
         return
 
+    is_publix = str(input("Is this a Publix receipt? (y/N): ")).strip().lower() in ['y', 'yes']
+
+    # ---------------------------
+    # NON-PUBLIX -> OpenAI branch
+    # ---------------------------
+
+    if  not is_publix:
+        logging.info("Applying AI adjustments...")
+
+        try:
+            result = extract_data_with_openai(raw)
+        except Exception as e:
+            logging.error(f"OpenAI data extraction failed: {e}")
+            return
+
+        dict_to_table(result)
+
+        save_data = True
+        choice = input("Save extracted data to file? (Y/n): ").strip().lower()
+        if choice in ['n', 'no']:
+            save_data = False
+
+        if save_data:
+            save_to_file(result, args.output)
+            logging.info("Data saved to %s", args.output)
+        else:
+            logging.info("Save cancelled by user.")
+        return
+
+    # ---------------------------
+    # PUBLIX
+    # ---------------------------
+
+    logging.info("Applying Publix-specific OCR adjustments...")
     # Calculate average confidence
     avg_conf = sum(x["confidence"] for x in raw) / len(raw)
     logging.debug("Average confidence: %.2f%%", avg_conf * 100)

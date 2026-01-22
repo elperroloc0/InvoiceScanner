@@ -72,4 +72,5 @@ def run_ocr(image, lang=("en",), gpu=False):
         if text:
             data.append({"text": text, "confidence": round(float(conf), 3)})
 
+
     return data
