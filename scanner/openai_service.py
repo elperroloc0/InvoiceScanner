@@ -24,10 +24,11 @@ def extract_data_with_openai(json_ocr_data: list[dict]) -> dict:
     # Дешевле по токенам: компактный JSON
     payload = json.dumps(json_ocr_data, ensure_ascii=False, separators=(",", ":"))
 
+
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": f"{prompt} Respond strictly in JSON format."},
+            {"role": "system", "content": prompt},
             {"role": "user", "content": payload},
         ],
         response_format={"type": "json_object"},
