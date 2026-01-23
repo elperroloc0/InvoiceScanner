@@ -52,5 +52,15 @@ python3 build_app.py
 ```
 Find the result in the `dist/` folder.
 
-## License
-MIT
+## ⚠️ Troubleshooting (Security Warnings)
+
+Because this app is open-source and not digitally signed, your computer might warn you on first launch.
+
+### macOS ("Unidentified Developer")
+1. Even if you see a warning, click **"Done"**.
+2. Go to **Settings** > **Privacy & Security**.
+3. Scroll down and click **"Open Anyway"** for InvoiceScanner.
+
+### Windows ("Windows protected your PC")
+1. Click **"More Info"** (shiny blue link).
+2. Click **"Run Anyway"**.
