@@ -1,9 +1,10 @@
-
 import logging
-
 import cv2
 import easyocr
 import numpy as np
+
+# Global reader cache to avoid re-initializing models recursively
+_READER_CACHE = {}
 
 
 def preprocess_receipt(image_path: str) -> np.ndarray:
@@ -22,11 +23,11 @@ def preprocess_receipt(image_path: str) -> np.ndarray:
     # 2. Grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # 3. Mild denoising (highly recommended)
+    # 3. Mild denoising (careful not to blur characters)
     gray = cv2.fastNlMeansDenoising(
         gray,
         None,
-        h=10,  # 6–10
+        h=5,  # Reduced from 10 to keep edges sharer
         templateWindowSize=7,
         searchWindowSize=21,
     )
@@ -56,14 +57,18 @@ def preprocess_receipt(image_path: str) -> np.ndarray:
 
 
 def run_ocr(image, lang=("en",), gpu=False):
-    logging.debug("Initializing EasyOCR reader (gpu=%s, lang=%s)", gpu, lang)
+    lang_tuple = tuple(sorted(lang))
+    if lang_tuple not in _READER_CACHE:
+        logging.info("Initializing EasyOCR reader for %s (gpu=%s)", lang_tuple, gpu)
+        _READER_CACHE[lang_tuple] = easyocr.Reader(list(lang_tuple), gpu=gpu)
 
-    reader = easyocr.Reader(list(lang), gpu=gpu)
+    reader = _READER_CACHE[lang_tuple]
     results = reader.readtext(
         image,
-        contrast_ths=0.5,
-        adjust_contrast=0.4,
-        low_text=0.4,
+        contrast_ths=0.2, # Lower threshold to capture lighter text
+        adjust_contrast=0.5,
+        low_text=0.3,
+        canvas_size=2560 # Larger canvas for long receipts
     )
 
     data = []
