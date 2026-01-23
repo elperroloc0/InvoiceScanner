@@ -166,7 +166,13 @@ class App(ctk.CTk):
             key = dialog.get_input()
             if key:
                 os.environ["OPEN_AI_API"] = key
-                logger.info("API Key provided manually for this session.")
+                # Persist to .env for future runs
+                try:
+                    with open(".env", "w") as f:
+                        f.write(f"OPEN_AI_API={key}\n")
+                    logger.info("API Key saved securely to local .env file.")
+                except Exception as e:
+                    logger.error(f"Failed to save API key: {e}")
             else:
                 logger.warning("No API Key provided. AI Vision functions will fail.")
                 messagebox.showwarning("Limited Mode", "No API Key provided. Only Local Templates (e.g. Publix) will work.")
