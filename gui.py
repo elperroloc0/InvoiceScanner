@@ -1,19 +1,18 @@
+import logging
 import os
 import threading
-import tkinter as tk
+import webbrowser
 from tkinter import filedialog, messagebox
-import requests
 
 import customtkinter as ctk
-from PIL import Image, ImageTk
+import requests
+from PIL import Image
 
 # Import scanner logic
-from scanner.config import ALLOWED_IMAGE_EXTENSIONS, SAVE_EXTENSIONS
-from scanner.ocr import preprocess_receipt
 from scanner.manager import ScannerManager
+from scanner.ocr import preprocess_receipt
 from scanner.storage import save_to_file
 
-import logging
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("ContinuumUI")
 
@@ -26,7 +25,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.version = "1.0.0" # Current internal version
+        self.version = "2.0.3" # Current internal version
         self.title(f"InvoiceScanner Continuum v{self.version}")
         self.geometry("1400x900")
         self.minsize(1000, 700)
@@ -65,7 +64,7 @@ class App(ctk.CTk):
         self.status_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
         self.status_frame.grid(row=4, column=0, padx=20, pady=(40, 0), sticky="ew")
 
-        self.label_status = ctk.CTkLabel(self.status_frame, text="System Ready", text_color="#2fa572", font=ctk.CTkFont(size=13))
+        self.label_status = ctk.CTkLabel(self.status_frame, text="System Ready", text_color="#1a8b5a", font=ctk.CTkFont(size=13))
         self.label_status.grid(row=0, column=0, sticky="w")
 
         self.progress_bar = ctk.CTkProgressBar(self.status_frame, orientation="horizontal", mode="indeterminate", height=6)
@@ -88,6 +87,15 @@ class App(ctk.CTk):
             self.export_frame, text="Excel / CSV", state="disabled", fg_color="transparent", border_width=1, height=35
         )
         self.btn_export_csv.pack(fill="x", pady=5)
+
+        # Settings button (Manual API Key change)
+        self.btn_settings = ctk.CTkButton(
+            self.sidebar_frame, text="⚙️ OpenAI API Key",
+            command=self.change_api_key,
+            fg_color="transparent", border_width=1, height=30,
+            font=ctk.CTkFont(size=11)
+        )
+        self.btn_settings.grid(row=12, column=0, padx=20, pady=(0, 20), sticky="ew")
 
         # --- Central Viewer (Image) ---
         self.viewer_frame = ctk.CTkFrame(self, corner_radius=15, border_width=1, border_color="#333333")
@@ -158,8 +166,28 @@ class App(ctk.CTk):
         self.processing = False
         self.current_image_path = None
 
-        # Security Check: Prompt for API Key if not found
+        # Background Checks
         self.after(500, self.check_api_key)
+        self.after(2000, lambda: threading.Thread(target=self.check_for_updates, daemon=True).start())
+
+    def check_for_updates(self):
+        """Checks GitHub for newer versions via version.json."""
+        url = "https://raw.githubusercontent.com/elperroloc0/InvoiceScanner/main/version.json"
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                latest = data.get("latest_version", "1.0.0")
+                if latest != self.version:
+                    changelog = data.get("changelog", "")
+                    self.after(0, lambda: self.prompt_update(latest, changelog))
+        except Exception as e:
+            logger.debug(f"Update check failed: {e}")
+
+    def prompt_update(self, version, changelog):
+        msg = f"A new version (v{version}) is available!\n\nChanges:\n{changelog}\n\nWould you like to go to the download page?"
+        if messagebox.askyesno("Update Available", msg):
+            webbrowser.open("https://github.com/elperroloc0/InvoiceScanner/releases/latest")
 
     def check_api_key(self):
         key = os.getenv("OPEN_AI_API")
@@ -178,6 +206,29 @@ class App(ctk.CTk):
             else:
                 logger.warning("No API Key provided. AI Vision functions will fail.")
                 messagebox.showwarning("Limited Mode", "No API Key provided. Only Local Templates (e.g. Publix) will work.")
+
+    def change_api_key(self):
+        """Allows manual update of the API key via the settings button."""
+        current_key = os.getenv("OPEN_AI_API", "")
+        # Mask the key for security in the dialog
+        masked_key = f"{current_key[:4]}...{current_key[-4:]}" if len(current_key) > 8 else "Not Set"
+
+        dialog = ctk.CTkInputDialog(
+            text=f"Current: {masked_key}\n\nEnter new OpenAI API Key:",
+            title="API Configuration"
+        )
+        new_key = dialog.get_input()
+
+        if new_key:
+            os.environ["OPEN_AI_API"] = new_key
+            try:
+                with open(".env", "w") as f:
+                    f.write(f"OPEN_AI_API={new_key}\n")
+                logger.info("API Key updated and saved to .env.")
+                messagebox.showinfo("Success", "API Key updated successfully!")
+            except Exception as e:
+                logger.error(f"Failed to save API key: {e}")
+                messagebox.showerror("Error", f"Failed to save key: {e}")
 
     def open_file(self):
         if self.processing:
