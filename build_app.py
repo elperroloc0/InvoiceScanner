@@ -54,8 +54,30 @@ def build():
     print(f"Executing: {' '.join(cmd)}")
     subprocess.run(cmd)
 
-    print("\n--- Build Complete! ---")
-    print(f"Check the 'dist' folder for your executable: InvoiceScanner-Titanium")
+    # --- Automatic Zipping for Distribution ---
+    print("\nCreating distribution archive...")
+    import shutil
+    archive_name = f"InvoiceScanner-Titanium-{sys.platform}"
+
+    # We zip the contents of the dist folder
+    if sys.platform == "win32":
+        # Windows: Zip the folder containing the .exe
+        shutil.make_archive(archive_name, 'zip', "dist/InvoiceScanner-Titanium")
+    elif sys.platform == "darwin":
+        # macOS: Zip the .app bundle
+        app_path = "dist/InvoiceScanner-Titanium.app"
+        if os.path.exists(app_path):
+            shutil.make_archive(archive_name, 'zip', "dist", "InvoiceScanner-Titanium.app")
+        else:
+            # Fallback for onedir without .app suffix
+            shutil.make_archive(archive_name, 'zip', "dist/InvoiceScanner-Titanium")
+    else:
+        # Generic fallback
+        shutil.make_archive(archive_name, 'zip', "dist")
+
+    print(f"\n--- Build Complete! ---")
+    print(f"Executable directory: dist/InvoiceScanner-Titanium")
+    print(f"Distribution archive: {archive_name}.zip")
 
 if __name__ == "__main__":
     build()
