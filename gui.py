@@ -7,14 +7,12 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 
 # Import scanner logic
-from scanner.config import ALLOWED_IMAGE_EXTENSIONS, SAVE_EXTENSIONS, APP_VERSION
+from scanner.config import ALLOWED_IMAGE_EXTENSIONS, SAVE_EXTENSIONS
 from scanner.ocr import preprocess_receipt
 from scanner.manager import ScannerManager
 from scanner.storage import save_to_file
 
 import logging
-import requests
-import json
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("ContinuumUI")
 
@@ -89,19 +87,6 @@ class App(ctk.CTk):
         )
         self.btn_export_csv.pack(fill="x", pady=5)
 
-        # Version & Update (Bottom)
-        self.version_label = ctk.CTkLabel(
-            self.sidebar_frame, text=f"v{APP_VERSION}", font=ctk.CTkFont(size=10), text_color="gray"
-        )
-        self.version_label.grid(row=12, column=0, pady=(0, 5))
-
-        self.update_btn = ctk.CTkButton(
-            self.sidebar_frame, text="Check Updates", height=20, width=100,
-            fg_color="transparent", border_width=1, font=ctk.CTkFont(size=10),
-            command=self.manual_update_check
-        )
-        self.update_btn.grid(row=13, column=0, pady=(0, 20))
-
         # --- Central Viewer (Image) ---
         self.viewer_frame = ctk.CTkFrame(self, corner_radius=15, border_width=1, border_color="#333333")
         self.viewer_frame.grid(row=0, column=1, padx=(20, 10), pady=20, sticky="nsew")
@@ -171,32 +156,8 @@ class App(ctk.CTk):
         self.processing = False
         self.current_image_path = None
 
-        # Automatic update check on start
-        threading.Thread(target=self.check_for_updates, args=(False,), daemon=True).start()
-
-    def check_for_updates(self, manual=False):
-        """Checks for new versions on a remote server."""
-        # TODO: Replace with your actual GitHub Raw URL or any static JSON URL
-        UPDATE_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/Continuum/main/version.json"
-
-        try:
-            response = requests.get(UPDATE_URL, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                latest = data.get("latest_version")
-                if latest and latest != APP_VERSION:
-                    msg = f"New version available: {latest}\n\nChangelog: {data.get('changelog', 'N/A')}\n\nDownload now?"
-                    if messagebox.askyesno("Update Available", msg):
-                        import webbrowser
-                        webbrowser.open(data.get("download_url", "https://github.com/"))
-                elif manual:
-                    messagebox.showinfo("Update Check", "You are using the latest version!")
-        except Exception as e:
-            if manual:
-                messagebox.showerror("Update Error", f"Could not check for updates:\n{e}")
-
-    def manual_update_check(self):
-        threading.Thread(target=self.check_for_updates, args=(True,), daemon=True).start()
+        # Security Check: Prompt for API Key if not found
+        self.after(500, self.check_api_key)
 
     def check_api_key(self):
         key = os.getenv("OPEN_AI_API")

@@ -1,7 +1,6 @@
 import regex as re
 
 STORAGE_FOLDER = "samples"
-APP_VERSION = "1.0.0"
 
 SAVE_EXTENSIONS = {".jsonl", ".json", ".csv"}
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg"}

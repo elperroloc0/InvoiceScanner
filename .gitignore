@@ -9,4 +9,3 @@ build/
 dist/
 *.spec
 scanned_images/
-.DS_Store
