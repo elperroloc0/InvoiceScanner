@@ -2,6 +2,7 @@ import os
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import requests
 
 import customtkinter as ctk
 from PIL import Image, ImageTk
@@ -25,7 +26,8 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("InvoiceScanner Continuum")
+        self.version = "1.0.0" # Current internal version
+        self.title(f"InvoiceScanner Continuum v{self.version}")
         self.geometry("1400x900")
         self.minsize(1000, 700)
 
