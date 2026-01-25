@@ -5,13 +5,6 @@ import sys
 def build():
     print("--- Starting Titanium Elite Build Sequence ---")
 
-    # Check for PyInstaller
-    try:
-        import PyInstaller
-    except ImportError:
-        print("Error: PyInstaller not found. Install it with: pip install pyinstaller")
-        return
-
     # Helper to clean previous builds
     if os.path.exists("dist"):
         print("Cleaning previous builds...")
@@ -26,10 +19,12 @@ def build():
     # Separator for --add-data
     sep = ";" if sys.platform == "win32" else ":"
 
+    # Construct the PyInstaller command
+    # Using python -m PyInstaller ensures we use the same environment's PyInstaller
     cmd = [
-        "pyinstaller",
+        sys.executable, "-m", "PyInstaller",
         "--noconfirm",
-        "--onedir", # Changed from --onefile to --onedir for instant startup (no unpacking)
+        "--onedir",
         "--windowed",
         "--name", "InvoiceScanner-Titanium",
         "--clean",
@@ -37,46 +32,56 @@ def build():
         # Explicitly add CustomTkinter data
         f"--add-data={ctk_path}{sep}customtkinter",
 
-        # Hidden imports often missed by analysis
+        # Hidden imports - Exhaustive list for stability
         "--hidden-import", "customtkinter",
         "--hidden-import", "PIL",
         "--hidden-import", "easyocr",
+        "--hidden-import", "scipy.special",
+        "--hidden-import", "scipy.spatial.transform._rotation_groups",
         "--hidden-import", "openai",
-        "--hidden-import", "sklearn.utils._typedefs", # Common EasyOCR/scikit-image issue
+        "--hidden-import", "cv2",
+        "--hidden-import", "sklearn.utils._typedefs",
         "--hidden-import", "sklearn.neighbors._partition_nodes",
-
-        # Collect data for EasyOCR if needed (basic models)
-        # Note: Heavy models might need manual copy, this is a basic config
+        "--hidden-import", "regex",
 
         "project.py"
     ]
 
     print(f"Executing: {' '.join(cmd)}")
-    subprocess.run(cmd)
+    result = subprocess.run(cmd)
+
+    if result.returncode != 0:
+        print("Error: Build failed!")
+        sys.exit(result.returncode)
 
     # --- Automatic Zipping for Distribution ---
     print("\nCreating distribution archive...")
     import shutil
     archive_name = f"InvoiceScanner-Titanium-{sys.platform}"
 
-    # We zip the contents of the dist folder
-    if sys.platform == "win32":
-        # Windows: Zip the folder containing the .exe
+    if sys.platform == "darwin":
+        # macOS: Use system 'zip' to preserve symlinks and permissions (Critical for .app bundles)
+        try:
+            # We want to zip 'InvoiceScanner-Titanium.app' inside 'dist'
+            # Resulting zip should contain the .app folder at root level
+            cwd = os.getcwd()
+            os.chdir("dist")
+            zip_cmd = ["zip", "-r", "-y", f"../{archive_name}.zip", "InvoiceScanner-Titanium.app"]
+            print(f"Running system zip: {' '.join(zip_cmd)}")
+            subprocess.run(zip_cmd, check=True)
+            os.chdir(cwd)
+        except Exception as e:
+            print(f"Error zipping on macOS: {e}")
+            print("Fallback: Manual zip required if this fails.")
+
+    elif sys.platform == "win32":
+        # Windows: specific zip for folder
         shutil.make_archive(archive_name, 'zip', "dist/InvoiceScanner-Titanium")
-    elif sys.platform == "darwin":
-        # macOS: Zip the .app bundle
-        app_path = "dist/InvoiceScanner-Titanium.app"
-        if os.path.exists(app_path):
-            shutil.make_archive(archive_name, 'zip', "dist", "InvoiceScanner-Titanium.app")
-        else:
-            # Fallback for onedir without .app suffix
-            shutil.make_archive(archive_name, 'zip', "dist/InvoiceScanner-Titanium")
     else:
-        # Generic fallback
+        # Linux/Other: Generic fallback
         shutil.make_archive(archive_name, 'zip', "dist")
 
     print(f"\n--- Build Complete! ---")
-    print(f"Executable directory: dist/InvoiceScanner-Titanium")
     print(f"Distribution archive: {archive_name}.zip")
 
 if __name__ == "__main__":

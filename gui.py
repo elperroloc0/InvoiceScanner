@@ -12,8 +12,24 @@ from PIL import Image
 from scanner.manager import ScannerManager
 from scanner.ocr import preprocess_receipt
 from scanner.storage import save_to_file
+import platform
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+# --- Platform-Specific Data Directory ---
+def get_app_data_dir():
+    """Returns the appropriate writable directory for settings/data."""
+    home = Path.home()
+    if platform.system() == "Windows":
+        return home / "AppData" / "Roaming" / "InvoiceScanner"
+    elif platform.system() == "Darwin":
+        return home / "Library" / "Application Support" / "InvoiceScanner"
+    else:
+        return home / ".local" / "share" / "InvoiceScanner"
+
+APP_DATA_DIR = get_app_data_dir()
+APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
+ENV_FILE = APP_DATA_DIR / ".env"
+
 logger = logging.getLogger("ContinuumUI")
 
 # Set appearance mode and theme
@@ -190,17 +206,31 @@ class App(ctk.CTk):
             webbrowser.open("https://github.com/elperroloc0/InvoiceScanner/releases/latest")
 
     def check_api_key(self):
+        # 1. Try loading from os environment (for dev/CI)
         key = os.getenv("OPEN_AI_API")
+
+        # 2. Try loading from persistent .env file
+        if not key and ENV_FILE.exists():
+            try:
+                with open(ENV_FILE, "r") as f:
+                    for line in f:
+                        if line.startswith("OPEN_AI_API="):
+                            key = line.strip().split("=", 1)[1]
+                            os.environ["OPEN_AI_API"] = key
+                            break
+            except Exception as e:
+                logger.warning(f"Failed to read .env: {e}")
+
         if not key:
             dialog = ctk.CTkInputDialog(text="Enter your OpenAI API Key:", title="Security Setup")
             key = dialog.get_input()
             if key:
                 os.environ["OPEN_AI_API"] = key
-                # Persist to .env for future runs
+                # Persist to .env for future runs (in App Data)
                 try:
-                    with open(".env", "w") as f:
+                    with open(ENV_FILE, "w") as f:
                         f.write(f"OPEN_AI_API={key}\n")
-                    logger.info("API Key saved securely to local .env file.")
+                    logger.info(f"API Key saved securely to {ENV_FILE}")
                 except Exception as e:
                     logger.error(f"Failed to save API key: {e}")
             else:
@@ -222,7 +252,7 @@ class App(ctk.CTk):
         if new_key:
             os.environ["OPEN_AI_API"] = new_key
             try:
-                with open(".env", "w") as f:
+                with open(ENV_FILE, "w") as f:
                     f.write(f"OPEN_AI_API={new_key}\n")
                 logger.info("API Key updated and saved to .env.")
                 messagebox.showinfo("Success", "API Key updated successfully!")

@@ -33,7 +33,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Build Application
-        run: python build_app.py
+        run: python3 build_app.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
