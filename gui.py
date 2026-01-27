@@ -1,8 +1,13 @@
 import logging
 import os
+import platform
+import ssl
 import threading
 import webbrowser
+from pathlib import Path
 from tkinter import filedialog, messagebox
+
+import certifi
 
 import customtkinter as ctk
 import requests
@@ -12,8 +17,7 @@ from PIL import Image
 from scanner.manager import ScannerManager
 from scanner.ocr import preprocess_receipt
 from scanner.storage import save_to_file
-import platform
-from pathlib import Path
+
 
 # --- Platform-Specific Data Directory ---
 def get_app_data_dir():
@@ -30,6 +34,15 @@ APP_DATA_DIR = get_app_data_dir()
 APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
 ENV_FILE = APP_DATA_DIR / ".env"
 
+# --- SSL Certificate Fix for macOS Bundles ---
+if platform.system() == "Darwin":
+    os.environ["SSL_CERT_FILE"] = certifi.where()
+    try:
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl._create_default_https_context = lambda: ssl_context
+    except Exception as e:
+        logging.warning(f"Failed to set SSL context: {e}")
+
 logger = logging.getLogger("ContinuumUI")
 
 # Set appearance mode and theme
@@ -41,7 +54,7 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.version = "2.0.3" # Current internal version
+        self.version = "2.0.4" # Current internal version
         self.title(f"InvoiceScanner Continuum v{self.version}")
         self.geometry("1400x900")
         self.minsize(1000, 700)

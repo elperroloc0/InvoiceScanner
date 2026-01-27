@@ -43,6 +43,8 @@ def build():
         "--hidden-import", "sklearn.utils._typedefs",
         "--hidden-import", "sklearn.neighbors._partition_nodes",
         "--hidden-import", "regex",
+        "--hidden-import", "certifi",
+        "--hidden-import", "ssl",
 
         "project.py"
     ]
