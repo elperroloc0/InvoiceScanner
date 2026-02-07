@@ -1,4 +1,4 @@
-# InvoiceScanner Titanium Elite
+# InvoiceScanner
 
 A professional, vision-first receipt scanner for macOS and Windows.
 Automatically extracts Store Name, Items, Prices, and Totals using a hybrid engine (Local Templates + OpenAI Vision AI).
