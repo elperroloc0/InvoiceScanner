@@ -31,7 +31,7 @@ If you want to modify the code or build it yourself:
 
 ### 1. Requirements
 - Python 3.10+
-- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) (optional, strictly for Tesseract engine fallback, mostly unused now)
+- EasyOCR (optional, strictly for EasyOCR engine fallback, mostly unused now)
 
 ### 2. Installation
 ```bash
